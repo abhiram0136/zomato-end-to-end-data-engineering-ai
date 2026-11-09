@@ -1,121 +1,100 @@
 ﻿# Zomato End-to-End Data Engineering & AI Project
 
-An end-to-end data engineering and AI project that processes Zomato data using **AWS S3, Apache Airflow, Snowflake, dbt, Python, and Ollama**. The project builds an automated data pipeline and integrates AI-powered applications for restaurant review analysis, Retrieval-Augmented Generation (RAG), and natural-language-to-SQL querying.
+An end-to-end data engineering and AI project that processes Zomato data
+using AWS S3, Snowflake, dbt, and Apache Airflow, then adds AI-powered
+review analysis and natural-language interfaces with Ollama and
+Streamlit.
 
----
+**GitHub Repository:**
+https://github.com/abhiram0136/zomato-end-to-end-data-engineering-ai
+
+------------------------------------------------------------------------
 
 ## Project Overview
 
-This project demonstrates how raw Zomato data can be transformed into structured analytical datasets and enriched with AI.
+This project brings together a cloud-based data pipeline, an analytics
+transformation layer, and two AI applications.
 
-The pipeline extracts raw datasets, stores them in AWS S3, orchestrates processing through Apache Airflow, transforms data using dbt in Snowflake, and generates AI-powered review insights using locally hosted Large Language Models.
-
-Two Streamlit applications provide interactive access to the processed data:
-
-- **RAG Chatbot:** Answers questions using restaurant review data and semantic search.
-- **Text-to-SQL:** Converts natural-language questions into SQL queries and executes them against Snowflake.
+-   **Data engineering:** Raw Zomato data is stored in AWS S3 and loaded
+    into Snowflake.
+-   **Data transformation:** dbt organises and transforms the data into
+    staging, dimensional, fact, and mart models.
+-   **Workflow orchestration:** Apache Airflow runs the batch workflow
+    and coordinates the raw reload, dbt transformations, review
+    enrichment, and AI-model build.
+-   **AI review enrichment:** Customer reviews are analysed with a local
+    Ollama model and stored in Snowflake.
+-   **AI applications:** Streamlit applications provide a review-focused
+    RAG chatbot and a natural-language-to-SQL interface.
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    A["Raw Zomato CSV Data"] --> B["AWS S3"]
-    B --> C["Apache Airflow"]
-    C --> D["Snowflake RAW"]
-    D --> E["dbt Transformations"]
-    E --> F["STAGING and MARTS"]
-    F --> G["AI Review Enrichment"]
-    G --> H["Snowflake AI Schema"]
-    H --> I["Review Insights"]
-    H --> J["RAG Chatbot"]
-    F --> K["Text-to-SQL Application"]
-    J --> L["Streamlit UI"]
-    K --> L
-    I --> M["Analytics and Insights"]
+``` text
+                    Zomato CSV Data
+                           |
+                           v
+                        AWS S3
+                           |
+                           v
+                       Snowflake
+                           |
+                           v
+                    RAW Schema
+                           |
+                           v
+                 dbt Staging / Core
+                 Dimensions and Facts
+                           |
+                           v
+                     Analytics Marts
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+      Review Enrichment             Business Analytics
+       Ollama Model                    in Snowflake
+             |
+             v
+       AI Schema / Enriched Reviews
+             |
+             v
+       dbt AI Review Insights
+             |
+       +-----+------------------+
+       |                        |
+       v                        v
+  RAG Review Chatbot       Text-to-SQL App
+    Streamlit                Streamlit
+       |                        |
+       +-----------+------------+
+                   |
+             User Questions
+
+       Apache Airflow orchestrates
+       the batch pipeline workflow
 ```
 
 ## Technology Stack
 
-| Technology | Purpose |
-|---|---|
-| Python | Data extraction, transformation, and AI integration |
-| AWS S3 | Raw data storage |
-| Apache Airflow | Workflow orchestration |
-| Snowflake | Cloud data warehouse |
-| dbt | SQL-based data transformation |
-| PostgreSQL | Supporting database integration |
-| Ollama | Local LLM execution |
-| Qwen 2.5:3B | Review enrichment and natural-language processing |
-| nomic-embed-text | Text embeddings |
-| Streamlit | Interactive AI applications |
-| Docker | Containerization |
-| Git & GitHub | Version control |
+  Area                                   Technologies
+  -------------------------------------- ----------------------
+  Object storage                         AWS S3
+  Data warehouse                         Snowflake
+  Data transformation                    dbt
+  Workflow orchestration                 Apache Airflow
+  Programming                            Python, SQL, Bash
+  AI / local LLM                         Ollama, `qwen2.5:3b`
+  Embeddings                             `nomic-embed-text`
+  Applications                           Streamlit
+  Version control                        Git, GitHub
+  Infrastructure used for the workflow   Docker
 
-## Project Structure
+## Pipeline Workflow
 
-```text
-ZOMATO-END-TO-END/
-|
-|-- DATA/
-|   |-- mart_review_insights.sql
-|
-|-- ai/
-|   |-- enrich_reviews.py
-|   |-- rag_chat.py
-|   |-- text_to_sql.py
-|
-|-- airflow/
-|   |-- dags/
-|   |   |-- zomato_batch.py
-|   |-- Dockerfile
-|   |-- docker-compose.yml
-|
-|-- zomato/
-|   |-- models/
-|   |   |-- staging/
-|   |   |-- marts/
-|   |-- macros/
-|   |   |-- generate_schema_name.sql
-|   |-- analyses/
-|   |-- seeds/
-|   |-- snapshots/
-|   |-- tests/
-|   |-- dbt_project.yml
-|   |-- README.md
-|
-|-- .gitignore
-|-- README.md
-```
+The Airflow DAG is named `zomato_batch`. Its successful run is organised
+in this order:
 
-## Data Engineering Workflow
-
-### 1. Data Storage - AWS S3
-
-Raw Zomato datasets are stored in Amazon S3.
-
-The datasets include information about:
-
-- Restaurants
-- Food items
-- Menus
-- Orders
-- Order items
-- Customers
-- Reviews
-
-Large source CSV files are intentionally excluded from this GitHub repository. They are maintained separately in AWS S3.
-
-### 2. Workflow Orchestration - Apache Airflow
-
-Apache Airflow orchestrates the complete batch pipeline.
-
-The main DAG is:
-
-`zomato_batch`
-
-The workflow executes the following tasks:
-
-```text
+``` text
 reload_raw
     |
     v
@@ -128,256 +107,235 @@ enrich_reviews
 dbt_build_ai
 ```
 
-**Task responsibilities:**
+1.  **`reload_raw`** --- reloads raw source data into the Snowflake RAW
+    layer.
+2.  **`dbt_build_core`** --- builds the core dbt models used for
+    analytics.
+3.  **`enrich_reviews`** --- analyses customer reviews using the local
+    Ollama model and writes the enrichment results to Snowflake.
+4.  **`dbt_build_ai`** --- builds the AI/review-insights dbt models
+    after enrichment.
 
-- `reload_raw`: Reloads raw source data into Snowflake.
-- `dbt_build_core`: Executes core dbt transformations.
-- `enrich_reviews`: Performs AI-based review enrichment.
-- `dbt_build_ai`: Builds AI-related analytical models.
+The screenshots below show a successful Airflow run in which all four
+tasks completed successfully.
 
-Docker Compose is used to run the Airflow environment.
+## Data Warehouse Layers
 
-### 3. Data Warehouse - Snowflake
+The Snowflake database used by the project is `ZOMATO`.
 
-Snowflake acts as the central cloud data warehouse.
+  -----------------------------------------------------------------------
+  Schema                              Purpose
+  ----------------------------------- -----------------------------------
+  `RAW`                               Raw source data loaded into
+                                      Snowflake
 
-The project organizes data into multiple layers and schemas, including:
+  `STAGING`                           Staging and transformed analytics
+                                      models, including review insight
+                                      marts
 
-- RAW
-- STAGING
-- AI
+  `AI`                                AI-enriched review data
+  -----------------------------------------------------------------------
 
-Raw source data is loaded into Snowflake and subsequently transformed into analytical datasets.
+Examples of project tables shown in the validation screenshots:
 
-### 4. Data Transformation - dbt
+-   `ZOMATO.AI.REVIEW_ENRICHED`
+-   `ZOMATO.STAGING.MART_REVIEW_INSIGHTS`
 
-dbt is used to transform raw data into structured, reusable analytical models.
+The enriched review output includes fields such as sentiment label,
+sentiment score, topic, key issue, model name, and enrichment timestamp.
+The review insights mart presents review information grouped into
+analytical dimensions such as city, topic, and sentiment.
 
-**Staging models:**
+## AI Features
 
-- `stg_food`
-- `stg_order_items`
-- `stg_orders`
-- `stg_restaurants`
-- `stg_review`
-- `stg_users`
-- `stg_menu`
+### 1. Review Enrichment
 
-**Dimension models:**
+The review enrichment workflow uses the local Ollama model `qwen2.5:3b`
+to analyse customer reviews. The Snowflake enrichment output shown in
+the project includes:
 
-- `dim_customer`
-- `dim_date`
-- `dim_food`
-- `dim_restaurant`
+-   Sentiment labels such as positive, negative, and neutral
+-   Sentiment scores
+-   Review topics, such as food quality, packaging, pricing, delivery,
+    and service
+-   Key issues extracted from reviews
+-   Model identifier and enrichment timestamp
 
-**Fact models:**
+### 2. RAG Review Chatbot
 
-- `fct_orders`
-- `fct_order_items`
+The Streamlit review chatbot searches a collection of 500 customer
+reviews and uses `qwen2.5:3b` through Ollama to answer questions about
+them.
 
-**Analytical mart models:**
+Example question shown:
 
-- `mart_dailly_city_revenue`
-- `mart_delivery_sla`
-- `mart_restaurant_performance`
-- `mart_review_insights`
+> What is the worst review, and what is the main key issue?
 
-These models provide structured data for downstream analysis and AI applications.
+The application returns an answer and provides an expandable section
+showing the reviews used to build that answer.
 
-## AI Integration
+### 3. Text-to-SQL Application
 
-The project integrates locally hosted LLMs using Ollama.
+The Text-to-SQL Streamlit application accepts questions in natural
+language. The local model generates SQL, Snowflake executes the query,
+and the application displays the returned results.
 
-### 1. AI Review Enrichment
+Example question shown:
 
-File: `ai/enrich_reviews.py`
+> Which cuisine has the most orders?
 
-Restaurant reviews are processed using an LLM to generate additional information, including sentiment and topic-related insights.
+The application displays the generated SQL and a result table containing
+cuisine and order-count columns.
 
-The enriched review data is stored in:
+## Screenshots
 
-`ZOMATO.AI.REVIEW_ENRICHED`
+### 1. Airflow pipeline execution
 
-The AI enrichment workflow is orchestrated through Apache Airflow.
+All four tasks in the `zomato_batch` DAG completed successfully.
 
-### 2. RAG Chatbot
+![Airflow DAG run showing all four successful
+tasks](screenshots/01-airflow-pipeline-success.png)
 
-File: `ai/rag_chat.py`
+### 2. AI-enriched reviews in Snowflake
 
-A Retrieval-Augmented Generation application that allows users to ask questions about restaurant reviews.
+Sample records from `ZOMATO.AI.REVIEW_ENRICHED`, including sentiment,
+score, topic, key issue, and model metadata.
 
-**Workflow:**
+![Snowflake AI-enriched review
+records](screenshots/02-snowflake-review-enrichment.png)
 
-1. Loads restaurant review data.
-2. Generates embeddings using `nomic-embed-text`.
-3. Retrieves relevant reviews through semantic similarity.
-4. Uses the Qwen 2.5:3B model to generate context-based answers.
-5. Displays responses through Streamlit.
+### 3. Review insights mart in Snowflake
 
-The application uses Ollama for local model execution.
+Sample records from `ZOMATO.STAGING.MART_REVIEW_INSIGHTS`, showing city,
+topic, sentiment, review count, average sentiment score, average star
+rating, and flagged issues.
 
-### 3. Natural Language to SQL
+![Snowflake review insights
+mart](screenshots/03-snowflake-review-insights.png)
 
-File: `ai/text_to_sql.py`
+### 4. Text-to-SQL application
 
-This application allows users to interact with Snowflake using natural language.
+A natural-language question is converted into SQL, executed against
+Snowflake, and displayed as a result table.
 
-**Workflow:**
+![Text-to-SQL Streamlit application](screenshots/04-text-to-sql-app.png)
 
-1. User enters a question in natural language.
-2. The LLM generates an SQL query.
-3. The application executes the query against Snowflake.
-4. Query results are displayed through Streamlit.
+### 5. RAG review chatbot
 
-This makes analytical data more accessible without requiring users to manually write SQL queries.
+The chatbot answers a question using the customer-review collection and
+shows the reviews used to build its answer.
 
-## Analytical Outputs
+![RAG customer review chatbot](screenshots/05-rag-review-chatbot.png)
 
-The project produces analytical datasets and AI-enriched review insights.
+## Repository Structure
 
-| Model / Table | Purpose |
-|---|---|
-| `MART_DAILLY_CITY_REVENUE` | City-level revenue analysis |
-| `MART_DELIVERY_SLA` | Delivery performance analysis |
-| `MART_RESTAURANT_PERFORMANCE` | Restaurant performance analysis |
-| `MART_REVIEW_INSIGHTS` | Aggregated restaurant review insights |
-| `REVIEW_ENRICHED` | AI-enriched restaurant reviews |
+The top-level project layout is:
+
+``` text
+ZOMATO END TO END/
+|
+|-- DATA/
+|-- ai/
+|   |-- enrich_reviews.py
+|   |-- rag_chat.py
+|   |-- text_to_sql.py
+|
+|-- airflow/
+|   |-- dags/
+|   |   |-- zomato_batch.py
+|
+|-- zomato/
+|   |-- dbt project and model files
+|
+|-- .gitignore
+|-- README.md
+```
+
+Large source CSV files, credentials, environment files, local dbt
+profiles, generated logs, and build artefacts are excluded from version
+control through `.gitignore`. The repository therefore does not contain
+the private credentials or the full local data files required to run the
+pipeline.
+
+## Prerequisites
+
+Before setting up the project, prepare the following:
+
+-   Python
+-   Docker and Docker Compose
+-   An AWS account and an S3 bucket containing the source data
+-   A Snowflake account with the required database, schemas, warehouse,
+    role, and access permissions
+-   Ollama with the required models available locally
+-   Git
+
+## Configuration
+
+Create your local configuration files and supply your own credentials.
+Do not commit secrets to GitHub.
+
+The project uses configuration for the following services:
+
+-   **AWS:** S3 bucket access and permissions.
+-   **Snowflake:** account, user/authentication method, role, warehouse,
+    database, and schema.
+-   **Airflow:** connections and environment configuration required by
+    the DAG.
+-   **dbt:** a local `profiles.yml` configured for the Snowflake target.
+-   **Ollama:** local model availability for `qwen2.5:3b` and
+    `nomic-embed-text`.
+
+Use environment variables or local secret/configuration files for
+credentials. Keep files such as `.env`, `CREDS.sh`, and `profiles.yml`
+out of Git commits.
 
 ## Running the Project
 
-### Prerequisites
+The exact commands and configuration values depend on your local AWS,
+Snowflake, Docker, and Airflow setup. At a high level:
 
-Install or configure the following:
+1.  Clone the repository.
+2.  Create and configure the required local environment and secret
+    files.
+3.  Configure AWS S3 access and Snowflake permissions.
+4.  Configure the dbt Snowflake profile.
+5.  Start the Airflow services using the project's Docker Compose
+    configuration.
+6.  Make sure the required Ollama models are installed and the Ollama
+    service is available to the AI scripts.
+7.  Trigger the `zomato_batch` DAG in Airflow.
+8.  Run the Streamlit RAG chatbot and Text-to-SQL applications using the
+    corresponding scripts in the `ai/` directory.
 
-- Python
-- Docker Desktop
-- Apache Airflow
-- AWS account with S3 access
-- Snowflake account
-- dbt with the Snowflake adapter
-- Ollama
-- Git
+Do not copy credentials from screenshots, logs, or another machine. Use
+your own service credentials and local configuration.
 
-### 1. Clone the Repository
+## Key Learnings
 
-```bash
-git clone https://github.com/abhiram0136/zomato-end-to-end-data-engineering-ai.git
+-   Designing an end-to-end batch data pipeline
+-   Loading data from object storage into a cloud data warehouse
+-   Modelling analytics data with dbt
+-   Orchestrating dependent tasks with Apache Airflow
+-   Integrating Python, SQL, Snowflake, and local LLMs
+-   Enriching unstructured customer reviews with sentiment and topic
+    information
+-   Building RAG and Text-to-SQL applications with Streamlit
 
-cd zomato-end-to-end-data-engineering-ai
-```
+## Future Improvements
 
-### 2. Configure AWS and Snowflake
-
-Configure your AWS credentials and Snowflake connection details locally.
-
-Make sure your Snowflake configuration includes the appropriate account, warehouse, database, schema, role, and authentication settings.
-
-Do not upload credentials or local configuration files to GitHub.
-
-### 3. Configure Ollama
-
-Install Ollama and pull the required models:
-
-```bash
-ollama pull qwen2.5:3b
-ollama pull nomic-embed-text
-```
-
-Start the Ollama service before running the AI applications.
-
-### 4. Run the Airflow Pipeline
-
-Navigate to the Airflow directory:
-
-```bash
-cd airflow
-```
-
-Start the Docker Compose environment:
-
-```bash
-docker compose up -d
-```
-
-Access the Airflow web interface using the configured webserver address and port.
-
-Enable and trigger the `zomato_batch` DAG.
-
-### 5. Run the RAG Chatbot
-
-From the project root:
-
-```bash
-streamlit run ai/rag_chat.py
-```
-
-### 6. Run the Text-to-SQL Application
-
-From the project root:
-
-```bash
-streamlit run ai/text_to_sql.py
-```
-
-**Note:** The applications require their respective local dependencies, environment variables, Snowflake configuration, and Ollama service to be configured. Raw CSV datasets are maintained separately and are not included in this repository.
-
-## Project Validation
-
-The following components were successfully tested during development:
-
-- Apache Airflow batch DAG execution.
-- Snowflake data loading and transformations.
-- dbt core model execution: 30/30 models passed.
-- dbt AI model execution: 1/1 model passed.
-- AI review enrichment and Snowflake data storage.
-- RAG chatbot retrieval and question answering.
-- Natural-language-to-SQL generation and query execution.
-
-## Key Learning Outcomes
-
-Through this project, I gained practical experience with:
-
-- Building end-to-end data engineering pipelines.
-- Working with AWS S3 and cloud data storage.
-- Orchestrating workflows using Apache Airflow.
-- Designing data warehouse transformations using Snowflake and dbt.
-- Implementing AI-based text enrichment.
-- Working with LLMs and text embeddings using Ollama.
-- Building RAG applications.
-- Converting natural-language questions into SQL queries.
-- Containerizing applications using Docker.
-- Integrating data engineering and AI workflows.
-
-## Security and Data Management
-
-Sensitive information and large generated files are intentionally excluded from this repository.
-
-The `.gitignore` file excludes:
-
-- Environment files and credentials.
-- Snowflake local configuration files.
-- AWS credential files.
-- Large source CSV datasets.
-- Python virtual environments and cache files.
-- dbt generated artifacts.
-- Logs and generated embedding files.
-
-Configure credentials locally before running the project.
-
-## Acknowledgement
-
-Project learning and implementation were guided in part by the data engineering tutorials and project concepts shared by **Darshil Parmar**, with additional implementation and AI integration work.
-
----
+-   Add automated data-quality tests and pipeline monitoring.
+-   Add incremental processing for larger datasets.
+-   Improve review-enrichment evaluation and error handling.
+-   Add application-level authentication and deployment configuration.
+-   Add CI checks for Python, SQL, and dbt changes.
 
 ## Author
 
 **Abhiram**
 
-GitHub: https://github.com/abhiram0136
+-   GitHub: [@abhiram0136](https://github.com/abhiram0136)
 
-Project Repository: https://github.com/abhiram0136/zomato-end-to-end-data-engineering-ai
+------------------------------------------------------------------------
 
----
-
-If you found this project interesting, feel free to explore the repository and connect with me!
+If you find this project useful, feel free to explore the repository and
+share feedback.
