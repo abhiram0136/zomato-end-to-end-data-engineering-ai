@@ -1,0 +1,94 @@
+﻿
+# ==============================
+# Environment variables & secrets
+# ==============================
+.env
+.env.*
+!.env.example
+**/CREDS.sh
+**/credentials*
+**/secrets.toml
+**/profiles.yml
+*.pem
+*.key
+
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ==============================
+# Airflow
+# ==============================
+airflow/logs/
+airflow/.env
+airflow/airflow.db
+
+# ==============================
+# dbt generated files
+# ==============================
+zomato/target/
+zomato/dbt_packages/
+zomato/logs/
+zomato/.user.yml
+
+# ==============================
+# Generated AI data
+# ==============================
+*.parquet
+*.pkl
+*.joblib
+
+# ==============================
+# Editors and operating systems
+# ==============================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================
+# Temporary files
+# ==============================
+*.log
+*.tmp
+*.bak
+
+# Additional generated files and local configuration
+review_embeddings.parquet
+*.parquet
+*.duckdb
+*.sqlite
+*.db
+
+# All generated logs and dbt artifacts
+logs/
+**/logs/
+**/target/
+**/dbt_packages/
+
+# Local dbt configuration
+**/.user.yml
+**/profiles.yml
+
+# Airflow generated files
+**/__pycache__/
+**/*.pyc
+airflow/airflow.cfg
+airflow/webserver_config.py
+
+# Local datasets or exports that should not be published
+# Uncomment if you decide not to publish DATA CSV files:
+# DATA/*.csv
+
+# Large source datasets - stored in AWS S3
+DATA/*.csv
+
+# Credentials
+DATA/CREDS.sh
